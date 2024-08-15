@@ -49,16 +49,11 @@ if(sharedGenes < 10000){
   stop ("Not enough genes matching")
 }
 
-str(ics)
-str(eigenvectors)
 mappedEigenvectors <- expression[,sharedGenes] %*% t(ginv(eigenvectors[sharedGenes,]))
 colnames(mappedEigenvectors) <- colnames(eigenvectors)
 
-
 mappedIcs <- expression[,sharedGenes] %*% t(ginv(ics[sharedGenes,]))
 colnames(mappedIcs) <- paste0("IC", 1:ncol(ics))
-str(mappedIcs)
 
 mappedCombined <- cbind(mappedEigenvectors, mappedIcs)
-
 write.table(mappedCombined, file = args$out, quote = F, sep = "\t", col.names = NA)
