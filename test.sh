@@ -7,7 +7,7 @@
 #SBATCH --job-name="InteractionAnalysis"
 
 # These are needed modules in UT HPC to get singularity and Nextflow running. Replace with appropriate ones for your HPC.
-ml nextflow
+#ml nextflow
 
 # We set the following variables for nextflow to prevent writing to your home directory (and potentially filling it completely)
 # Feel free to change these as you wish.
@@ -53,8 +53,11 @@ qtls_to_test=${script_folder}/data/sign_qtls_cistrans.txt.gz
 chunk_file=${script_folder}/data/ChunkingFile.GRCh38.110_head.txt
 exp_platform=RNAseq
 
+expression_eigenvectors=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/EigenvectorsTop1000.txt.gz # The expression eigenvectors as calculated using all eqtlgen samples
+expression_ics=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/Ica100.txt.gz # The expression independent components as calculated using all eqtlgen samples
+
 # Command:
-NXF_VER=21.10.6 nextflow run /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/InteractionAnalysis.nf \
+NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/InteractionAnalysis.nf \
 --vcf_dir $vcf_dir_path \
 --raw_expfile ${raw_exp_path} \
 --norm_expfile ${norm_exp_path} \
@@ -65,10 +68,15 @@ NXF_VER=21.10.6 nextflow run /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/inter
 --covariate_to_test $covariate_to_test \
 --qtls_to_test $qtls_to_test \
 --genotype_pcs $genotype_pcs_path \
+--expression_eigenvectors $expression_eigenvectors \
+--expression_ics $expression_ics \
 --chunk_file $chunk_file \
 --outdir ${output_path}  \
 --run_stratified false \
 --preadjust false \
 --cell_perc_interactions false \
--resume \
--profile singularity,slurm
+-profile standard \
+--dev true
+
+# -resume \
+#-profile slurm

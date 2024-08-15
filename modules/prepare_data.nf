@@ -200,6 +200,28 @@ process NormalizeExpression {
 }
 
 /*
+* Create samples scores based on the eigenvectors and independent components
+*/
+process MapEigenvectorsAndIcs {
+    label "medium2"
+    debug true
+
+
+    input:
+        path normalized_expression_data
+
+    output:
+        path "mappedEigenvectorsAndIcs.txt"
+
+
+    script:
+        """
+        echo "Map eigen and ic"
+        Rscript $projectDir/bin/mapEigenvectorsAndIcs.R -e normalized_expression_data -v ${params.expression_eigenvectors} -i ${params.expression_ics} -o mappedEigenvectorsAndIcs.txt
+        """
+}
+
+/*
  * Split the combined covariate table into 2 according to the covariate of interest (E.g. sex or age). 
  * In case of a binary covariate the 2 values will be used for the split (E.g. males and females separately), 
  * in case of a quantitative covariate, samples falling in the first and last quartile will be written to the output files.
