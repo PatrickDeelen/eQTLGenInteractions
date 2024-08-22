@@ -2,22 +2,7 @@ library(optparse)
 library(readr)
 library(MASS)
 
-option_list <- list(
-  make_option(c("-e", "--expression"), type = "character",
-              help = "Path to the eQTLgen normalized expression data"),
-  make_option(c("-v", "--eigenvectors"), type = "character",
-              help = "Path to the eigenvectors as calculated in the full eQTLgen data"),
-  make_option(c("-i", "--ics"), type = "character",
-              help = "Path to the independent components as calculated in the full eQTLgen data"),
-  make_option(c("-o", "--out"), type = "character",
-              help = "Output file name.")
-)
-
-args <- list()
-args$expression = "/groups/umcg-bios/tmp01/projects/BIOS_for_eQTLGenII/pipeline/20220426//1_DataQC/out/LL/outputfolder_exp/exp_data_QCd/exp_data_preprocessed.txt"
-args$eigenvectors =  "/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/EigenvectorsTop1000.txt.gz"
-args$ics =  "/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/Ica100.txt.gz"
-args$out =  "/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactionsmappedEigenvectorsAndIcs.txt"
+cat(paste0("args$",names(args), " = \"", unlist(args), "\"\n"))
 
 write(paste(names(args), unlist(args), sep = ": "), stdout())
 
@@ -45,7 +30,7 @@ ics <- readDoubleMatrix(args$ics)
 
 sharedGenes <- intersect(rownames(eigenvectors), colnames(expression))
 
-if(sharedGenes < 10000){
+if(length(sharedGenes) < 10000){
   stop ("Not enough genes matching")
 }
 

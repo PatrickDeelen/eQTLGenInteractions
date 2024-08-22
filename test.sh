@@ -30,7 +30,7 @@ raw_exp_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/output/2023-03-16-sex
 # normalized expression data (output of the DataQC step)
 norm_exp_path=${base_folder}/1_DataQC/out/${c}/outputfolder_exp/exp_data_QCd/exp_data_preprocessed.txt
 # File that contains cohort covariates: E.g. sex and age.
-covariate_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/output/2023-03-16-sex-specific-analyses/run1/BIOS_covariates.txt
+covariate_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/BIOS_covariates.txt
 # genotype to expression coupling file
 gte_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/output/2023-03-16-sex-specific-analyses/run1/data/${c}/${c}.gte
 
@@ -42,7 +42,7 @@ genotype_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_gen/gen_PCs/Geno
 # Path to expression PCs (output of dataQC step)
 expression_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_exp/exp_PCs/exp_PCs.txt
 
-# output folder (needs to exist)
+# output folder
 output_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/test3/
 
 
@@ -51,10 +51,13 @@ script_folder=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/ieQTL_n
 
 qtls_to_test=${script_folder}/data/sign_qtls_cistrans.txt.gz
 chunk_file=${script_folder}/data/ChunkingFile.GRCh38.110_head.txt
-exp_platform=RNAseq
+exp_platform=RNAseq #options: RNAseq; RNAseq_HGNC; HT12v3; HT12v4; HuRef8; AffyU219; AffyHumanExon
 
 expression_eigenvectors=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/EigenvectorsTop1000.txt.gz # The expression eigenvectors as calculated using all eqtlgen samples
 expression_ics=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/Ica100.txt.gz # The expression independent components as calculated using all eqtlgen samples
+
+
+mkdir -p ${output_path}
 
 # Command:
 NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/InteractionAnalysis.nf \

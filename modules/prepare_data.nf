@@ -67,6 +67,7 @@ process Deconvolution {
  */
 process CombineCovariatesRNAqual {
     label "medium1"
+    debug true
 
     publishDir params.outdir, mode: 'copy'
 
@@ -76,6 +77,8 @@ process CombineCovariatesRNAqual {
         path genotype_PCs
         path gte
         path rna_qual
+        path eigenAndIc
+        path normalized_expression_data
 
     output:
         path ("covariates.combined.txt"), emit: covariates_ch
@@ -85,12 +88,12 @@ process CombineCovariatesRNAqual {
     script:
     if (cell_counts != "NA")
       """
-      Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -c ${cell_counts} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual}
+      Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -c ${cell_counts} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual} -v ${eigenAndIc} -e ${normalized_expression_data}
        md5sum covariates.combined.txt > covariates.combined.txt.md5
       """
     else
       """
-      Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual}
+      Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual} -v ${eigenAndIc} -e ${normalized_expression_data}
        md5sum covariates.combined.txt > covariates.combined.txt.md5
       """
 
@@ -110,6 +113,9 @@ process CombineCovariates {
         path cell_counts
         path genotype_PCs
         path gte
+        path eigenAndIc_ch
+        path norm_expr
+
 
     output:
         path ("covariates.combined.txt"), emit: covariates_ch
@@ -150,7 +156,6 @@ process CalculateRNAQualityScore {
  */
 process NormalizeExpression {
     label "medium2"
-    echo true
     publishDir params.outdir, mode: 'copy'
     
     input:
@@ -209,6 +214,8 @@ process MapEigenvectorsAndIcs {
 
     input:
         path normalized_expression_data
+        path expression_eigenvectors
+        path expression_ics
 
     output:
         path "mappedEigenvectorsAndIcs.txt"
@@ -217,7 +224,7 @@ process MapEigenvectorsAndIcs {
     script:
         """
         echo "Map eigen and ic"
-        Rscript $projectDir/bin/mapEigenvectorsAndIcs.R -e normalized_expression_data -v ${params.expression_eigenvectors} -i ${params.expression_ics} -o mappedEigenvectorsAndIcs.txt
+        Rscript $projectDir/bin/mapEigenvectorsAndIcs.R -e ${normalized_expression_data} -v ${expression_eigenvectors} -i ${expression_ics} -o mappedEigenvectorsAndIcs.txt
         """
 }
 
@@ -350,19 +357,23 @@ process MergePlinkPerChr {
     main:
     //signature matrix path
 	signature_matrix = "$projectDir/data/signature_matrices/" + signature_matrix_name  + "_ensg.txt.gz"
+
+    //TODO
+	//eigenAndIc_ch = MapEigenvectorsAndIcs(normalized_expression_data, params.expression_eigenvectors, params.expression_ics)
+	eigenAndIc_ch = channel.fromPath( '/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/mappedEigenvectorsAndIcs.txt' )
+	rnaquality_ch = CalculateRNAQualityScore(normalized_expression_data)
     
     // if no deconvolution is required
     if (deconvolution_method == "NA") {
-        rnaquality_ch = CalculateRNAQualityScore(normalized_expression_data).view()
-        CombineCovariatesRNAqual(covariates, Channel.fromPath("NA"), genotype_pcs, gte, rnaquality_ch)
+
+        CombineCovariatesRNAqual(covariates, Channel.fromPath("NA"), genotype_pcs, gte, rnaquality_ch, eigenAndIc_ch, normalized_expression_data)
         covariates_ch = CombineCovariatesRNAqual.out.covariates_ch
     
     // if lab-based cell proportions are provided: don't run deconvolution
     } else if (deconvolution_method == "lab"){
 
         cell_counts_ch = Channel.fromPath(params.lab_cell_perc)
-        rnaquality_ch = CalculateRNAQualityScore(normalized_expression_data)
-        CombineCovariatesRNAqual(covariates, cell_counts_ch, genotype_pcs, gte, rnaquality_ch)
+        CombineCovariatesRNAqual(covariates, cell_counts_ch, genotype_pcs, gte, rnaquality_ch, eigenAndIc_ch, normalized_expression_data)
         covariates_ch = CombineCovariatesRNAqual.out.covariates_ch
 
     // the most common case: run deconvolution on TPM-normalized expression, estimate RNA quality and combine all covariates
@@ -374,8 +385,7 @@ process MergePlinkPerChr {
             Deconvolution(normalized_expression_data, signature_matrix, deconvolution_method, exp_type)
          }
         cell_counts_ch = Deconvolution.out.cellCounts
-        rnaquality_ch = CalculateRNAQualityScore(normalized_expression_data)
-        CombineCovariatesRNAqual(covariates,cell_counts_ch, genotype_pcs, gte, rnaquality_ch)
+        CombineCovariatesRNAqual(covariates,cell_counts_ch, genotype_pcs, gte, rnaquality_ch, eigenAndIc_ch, normalized_expression_data)
         covariates_ch = CombineCovariatesRNAqual.out.covariates_ch
     }   
     
