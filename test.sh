@@ -79,7 +79,8 @@ NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp01/proje
 --preadjust false \
 --cell_perc_interactions false \
 -profile standard \
---dev true
+--dev true \
+-resume
 
 # -resume \
 #-profile slurm

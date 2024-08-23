@@ -5,6 +5,7 @@ library(dplyr)
 library(tidyr)
 library(patchwork)
 library(caret)
+library(readr)
 
 option_list <- list(
   make_option(c("-s", "--general_covs"), type = "character",
@@ -46,10 +47,30 @@ rename_samples <- function(d, gte, key_col = 1, value_col = 2){
   return(d_m)
 }
 
+readDoubleMatrix <- function(path){
+
+  firstColName <- scan(path, what = "character", n = 1, sep = '\t', quiet = T )
+  if(firstColName == ""){
+    # if there is no column name for the first column ...1is used by read_delim of the readr lib
+    firstColName <- "...1"
+  }
+
+  l <- list()
+  l[[firstColName]] <- col_character()
+  colTypes <- structure(list(cols = l, default = col_double()), class = "col_spec")
+
+  table_tmp <- read_delim(path, delim = "\t", quote = "", col_types = colTypes)
+  table <- as.matrix(table_tmp[,-1])
+  rownames(table) <- table_tmp[,1][[1]]
+  return(table)
+}
+
 # Combine general covariates with cell counts if they are provided
 
-covar_main <- as.data.frame(read.delim(args$general_covs, check.names = F, header = T, row.names = 1, as.is = T, sep ="\t"))
+covar_main <- read.delim(args$general_covs, check.names = F, header = T, row.names = 1, as.is = T, sep ="\t")
 
+
+covar_main$age[is.na(as.numeric(covar_main$age)) & !is.na(covar_main$age)]
 
 if(!all(c("gender", "age") %in% colnames(covar_main))){
   stop("Covariate file does not contain gender and sex column")
@@ -81,7 +102,7 @@ str(covar)
 
 # add genotype PCs
 geno_pcs <- read.delim(args$genotype_pcs, check.names = F, header = T, row.names = 1, as.is = T)
-geno_pcs <- geno_pcs[,1:4]
+colnames(geno_pcs) <- paste0("GenoPC", 1:ncol(geno_pcs))
 #geno_pcs <- rename_samples(geno_pcs[,1:4], gte)
 
 covar_merged <- merge(covar, geno_pcs, by = 0)
@@ -103,11 +124,11 @@ if (!is.null(args$rna_qual)){
 
 if (!is.null(args$eigenAndIca)){
   eigenAndICa <- read.delim(args$eigenAndIca, check.names = F, header = T, row.names = 1, as.is = T)
-  covar_merged <- merge(covar_merged, rna_qual, by = 0)
+  covar_merged <- merge(covar_merged, eigenAndICa, by = 0)
   row.names(covar_merged) <- covar_merged$Row.names
   covar_merged$Row.names = NULL
 
-  cat("Added RNA quality\n")
+  cat("Added mapped eigenvectors and ICs quality\n")
 
 }
 
@@ -134,22 +155,36 @@ cat("Number of samples with covariate data available:", nrow(covar_merged), "\n"
 
 
 # run INT on general covariates, cell counts and RNA quality
-covar_names_for_INT <- names(which(apply(covar, 2, function(x) length(unique(x)) > 3)))
-covar_merged_int <- cbind(covar_merged[, !colnames(covar_merged) %in% covar_names_for_INT], apply(covar_merged[,covar_names_for_INT, drop = F], 2, function(x) qnorm((rank(x,na.last="keep")-0.5)/sum(!is.na(x))) ))
-colnames(covar_merged_int) <- c(colnames(covar_merged[, !colnames(covar_merged) %in% covar_names_for_INT]), covar_names_for_INT)
+covar_names_for_INT <- names(which(apply(covar_merged, 2, function(x) length(unique(x)) > 3)))
+covar_merged_int <- cbind(covar_merged[, !colnames(covar_merged) %in% covar_names_for_INT, drop =F], apply(covar_merged[,covar_names_for_INT, drop = F], 2, function(x) qnorm((rank(x,na.last="keep")-0.5)/sum(!is.na(x))) ))
+#colnames(covar_merged_int) <- c(colnames(covar_merged[, !colnames(covar_merged) %in% covar_names_for_INT]), covar_names_for_INT)
+
+
+
+
+#Expression data is already INT so we add that now
+expression <- readDoubleMatrix(args$expression)
+covar_merged_int <- merge(covar_merged_int, expression, by = 0)
+row.names(covar_merged_int) <- covar_merged_int$Row.names
+covar_merged_int$Row.names = NULL
+
+cat("Added pre INT expression data\n")
+
+
 
 # Plot covariate distributions prior to INT
-pdf(paste0(args$out, ".distributions.pdf"), height = 5, width = 10)
-#covar_long <- pivot_longer(covar_merged, cols = everything())
-for (covar_name in colnames(covar_merged)){
-  p1 <- ggplot(covar_merged, aes(get(covar_name))) + geom_histogram(bins = 50, color = "black", alpha = 0.5, fill = "dodgerblue4") + theme_bw() + xlab(covar_name) + ggtitle(paste0("Raw ", covar_name))
-  p2 <- ggplot(covar_merged_int, aes(get(covar_name))) + geom_histogram(bins = 50, color = "black", alpha = 0.5, fill = "dodgerblue4") + theme_bw() + xlab(covar_name) + ggtitle(paste0("INT ", covar_name))
-  print(p1 + p2)
-}
-dev.off()
+# pdf(paste0(args$out, ".distributions.pdf"), height = 5, width = 10)
+# #covar_long <- pivot_longer(covar_merged, cols = everything())
+# for (covar_name in colnames(covar_merged)[1:2]){
+#   p1 <- ggplot(covar_merged, aes(get(covar_name))) + geom_histogram(bins = 50, color = "black", alpha = 0.5, fill = "dodgerblue4") + theme_bw() + xlab(covar_name) + ggtitle(paste0("Raw ", covar_name))
+#   p2 <- ggplot(covar_merged_int, aes(get(covar_name))) + geom_histogram(bins = 50, color = "black", alpha = 0.5, fill = "dodgerblue4") + theme_bw() + xlab(covar_name) + ggtitle(paste0("INT ", covar_name))
+#   print(p1 + p2)
+# }
+# dev.off()
 
 # Write INT covariates
 write.table(covar_merged_int, file = args$out, sep = "\t", quote = F, col.names = NA)
 
+write.table(colnames(covar_merged_int), file = "availableCovariates.txt", sep = "\t", quote = F, col.names = F, row.names = F)
 
 

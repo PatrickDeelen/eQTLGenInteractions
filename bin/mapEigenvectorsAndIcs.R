@@ -2,9 +2,22 @@ library(optparse)
 library(readr)
 library(MASS)
 
-cat(paste0("args$",names(args), " = \"", unlist(args), "\"\n"))
+option_list <- list(
+  make_option(c("-e", "--expression"), type = "character",
+              help = "Path to the eQTLgen normalized expression data"),
+  make_option(c("-v", "--eigenvectors"), type = "character",
+              help = "Path to the eigenvectors as calculated in the full eQTLgen data"),
+  make_option(c("-i", "--ics"), type = "character",
+              help = "Path to the independent components as calculated in the full eQTLgen data"),
+  make_option(c("-o", "--out"), type = "character",
+              help = "Output file name.")
+)
 
-write(paste(names(args), unlist(args), sep = ": "), stdout())
+parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
+args <- parse_args(parser)
+
+
+cat(paste0("args$",names(args), " = \"", unlist(args), "\"\n"))
 
 readDoubleMatrix <- function(path){
 
@@ -29,6 +42,8 @@ eigenvectors <- readDoubleMatrix(args$eigenvectors)
 ics <- readDoubleMatrix(args$ics)
 
 sharedGenes <- intersect(rownames(eigenvectors), colnames(expression))
+
+length(sharedGenes)
 
 if(length(sharedGenes) < 10000){
   stop ("Not enough genes matching")
