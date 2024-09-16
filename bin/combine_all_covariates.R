@@ -80,6 +80,12 @@ if(any(!unique(covar_main$gender) %in% c("M","F",NA))){
   stop("Gender column contains unexpected values, should be M F or NA")
 }
 
+#F1 M2
+covar_main$gender[covar_main$gender=="F" ] <- 1
+covar_main$gender[covar_main$gender=="M" ] <- 2
+covar_main$gender <- as.numeric(covar_main$gender)
+
+
 gte <- read.delim(args$gte, check.names = F, header = F, as.is = T, sep ="\t")
 
 

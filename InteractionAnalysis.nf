@@ -25,7 +25,7 @@ params.lab_cell_perc = ''
 
 params.signature_matrix_name = "LM22"
 params.deconvolution_method = "dtangle"
-params.num_perm = 0
+params.num_perm = 1
 
 params.run_stratified = false
 params.preadjust = false
@@ -77,8 +77,8 @@ if (params.bgen_dir != '') {
 } 
 
 
-include { PREPARE_COVARIATES; NormalizeExpression; ConvertVcfToBgen; ConvertVcfToPlink; MergePlinkPerChr; MapEigenvectorsAndIcs } from './modules/prepare_data.nf'
-include { RUN_INTERACTION_QTL_MAPPING; IeQTLmapping; IeQTLmapping_InteractionCovariates; SplitCovariates; PreadjustExpression } from './modules/interaction_analysis2.nf'
+include { PREPARE_COVARIATES; NormalizeExpression; ConvertVcfToBgen; ConvertVcfToPlink; MergePlinkPerChr; MapEigenvectorsAndIcs; Transpose } from './modules/prepare_data.nf'
+include { RUN_INTERACTION_QTL_MAPPING; IeQTLmapping } from './modules/interaction_analysis3.nf'
 include { RUN_STRATIFIED_ANALYSIS; RunEqtlMappingPerGenePlink } from './modules/stratified_analysis.nf'
 
 /* 
@@ -87,6 +87,7 @@ include { RUN_STRATIFIED_ANALYSIS; RunEqtlMappingPerGenePlink } from './modules/
 
 workflow {
     params.each{ k, v -> println "params.${k.padRight(25)} = ${v}" }
+
 
     if(params.dev){
         // this block is only run if test flag is used for development
@@ -121,23 +122,10 @@ workflow {
             .set { bfile_ch }
         }
 
-        /*
-         * Run interaction analysis
-         */
-        // if SNP-gene pairs (qtls_to_test) are provided use them in the interaction analysis, otherwise test all SNPs around the gene
-        if (params.qtls_to_test == ''){
-          features_to_test_ch = Channel.fromPath(params.genes_to_test)
-        } else {
-          features_to_test_ch = Channel.fromPath(params.qtls_to_test)
-        }
-        RUN_INTERACTION_QTL_MAPPING(norm_exp_ch, bfile_ch, covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, features_to_test_ch)
 
-        /*
-         * Stratified analysis if required
-         */
-        if (params.run_stratified){
-          RUN_STRATIFIED_ANALYSIS(norm_exp_ch, bfile_ch, covariates_ch, annotation_ch, gte_ch, chunk_ch)
-        }
+        RUN_INTERACTION_QTL_MAPPING(Transpose(filt_exp_ch   , "expressionT.txt"), bfile_ch, covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, Channel.fromPath(params.qtls_to_test))
+
+
     }
 }
 

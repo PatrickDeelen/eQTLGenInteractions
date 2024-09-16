@@ -7,6 +7,9 @@ nextflow.enable.dsl = 2
  */
 process IeQTLmapping {
     tag "Chunk: $chunk"
+    debug true
+    errorStrategy 'terminate'
+    memory '25 GB'
 
     //publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
 
@@ -21,10 +24,14 @@ process IeQTLmapping {
     shell:
     '''
 
+    hostname
+
     geno=!{bed}
     plink_base=${geno%.bed}
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
+
+    HOME=${PWD}/home
 
     # make a fake gte because limix doesn't work without it
     awk 'BEGIN {OFS="\\t"}; {print $2, $2}' !{fam} > gte.txt
@@ -32,18 +39,21 @@ process IeQTLmapping {
     # determine whether to test SNP-gene pairs or all SNPs within 1Mb
     qtls=!{params.qtls_to_test}
     genes=!{params.genes_to_test}
-    if [ "${#qtls}" -gt 1 ]
-    then 
+    if [ -n $qtls ]
+    then
+        echo "${qtls}"
         arg_line="-fvf !{qtl_ch}"
     else
         arg_line="-ff !{qtl_ch} -w 1000000 "
     fi
 
+    echo "argline: ${arg_line}"
+
     # --interaction_term is a colum from -cf
     # all variables from -cf are used in model without interaction
     # -gm gaussnorm does an inverse normal transformation of the expression data
     
-    python /limix_qtl/Limix_QTL/run_interaction_QTL_analysis.py \
+    python /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/ForDasha/Limix_TMP/run_interaction_QTL_analysis.py \
      --plink ${plink_base} \
       -af !{limix_annotation} \
       -cf !{covariates} \
@@ -56,6 +66,7 @@ process IeQTLmapping {
       -np !{params.num_perm} \
       -maf 0.01 \
       -c \
+      -d \
       -gm gaussnorm \
       -hwe 0.0001 \
       --write_permutations \
@@ -89,6 +100,8 @@ process IeQTLmapping_InteractionCovariates {
     outdir=${PWD}/limix_out/
     mkdir $outdir
 
+
+
     # make a fake gte because limix doesn't work without it
     awk 'BEGIN {OFS="\\t"}; {print $2, $2}' !{fam} > gte.txt
 
@@ -104,7 +117,11 @@ process IeQTLmapping_InteractionCovariates {
 
     # --interaction_term is a colum from -cf
     # all variables from -cf are used in model without interaction
-    # -gm gaussnorm does an inverse normal transformation of the expression data
+    # -gm gaussnorm does an inverse normal transformation of the expression dat
+    # -cf is covariate matrix
+    # -c moet -t worden
+    # window 0
+    # -af file moet genen length 1 maken
 
     python /limix_qtl/Limix_QTL/run_interaction_QTL_analysis.py \
      --plink ${plink_base} \
@@ -238,7 +255,7 @@ process PlotSTX3NOD2 {
  * Convert the interaction analysis output folder to a text file
  */
 process ConvertIeQTLsToText {
-    echo true
+
 
      publishDir params.outdir, mode: 'copy', overwrite: true, failOnError: true
 

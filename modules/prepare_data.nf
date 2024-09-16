@@ -67,7 +67,7 @@ process Deconvolution {
  */
 process CombineCovariatesRNAqual {
     label "medium1"
-    debug true
+    debug false
 
     publishDir params.outdir, mode: 'copy'
 
@@ -89,6 +89,7 @@ process CombineCovariatesRNAqual {
     script:
 
       """
+      echo "test"
       Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -c ${cell_counts} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual} -v ${eigenAndIc} -e ${filt_exp_ch}
        md5sum covariates.combined.txt > covariates.combined.txt.md5
        md5sum availableCovariates.txt > availableCovariates.txt.md5
@@ -176,7 +177,7 @@ process NormalizeExpression {
 */
 process MapEigenvectorsAndIcs {
     label "medium2"
-    debug true
+    debug false
 
 
     input:
@@ -216,6 +217,25 @@ process SplitCovariates {
     script:
     """
         Rscript $projectDir/bin/split_covariate_into_bins.R $combined_covariates $covariate_name $normalized_expression_data ./ 
+    """
+
+}
+
+process Transpose {
+    label "medium1"
+
+    input:
+        path inputMatrix
+        val outputFileName
+
+    output:
+        path outputFileName
+
+    script:
+    """
+        echo $inputMatrix
+        echo $outputFileName
+        Rscript $projectDir/bin/transpose.R $inputMatrix $outputFileName
     """
 
 }

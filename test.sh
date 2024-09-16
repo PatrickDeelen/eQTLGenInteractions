@@ -35,7 +35,7 @@ covariate_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/BIOS_covariates.txt
 gte_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/output/2023-03-16-sex-specific-analyses/run1/data/${c}/${c}.gte
 
 # covariate to test (name of the sex column in the covariate file)  gender_F1M2
-covariate_to_test=
+covariate_to_test=gender
 
 # Path to genotype PCs (output of dataQC step)
 genotype_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_gen/gen_PCs/GenotypePCs.txt
@@ -43,14 +43,14 @@ genotype_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_gen/gen_PCs/Geno
 expression_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_exp/exp_PCs/exp_PCs.txt
 
 # output folder
-output_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/test3/
+output_path=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/test4/
 
 
 # Path to the nextflow interaction analysis folder
 script_folder=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/
 
 qtls_to_test=${script_folder}/data/sign_qtls_cistrans.txt.gz
-chunk_file=${script_folder}/data/ChunkingFile.GRCh38.110_head.txt
+chunk_file=${script_folder}/data/ChunkingFile_test.txt
 exp_platform=RNAseq #options: RNAseq; RNAseq_HGNC; HT12v3; HT12v4; HuRef8; AffyU219; AffyHumanExon
 
 expression_eigenvectors=/groups/umcg-fg/tmp01/projects/eqtlgen-phase2/interactions/downloadData/EigenvectorsTop1000.txt.gz # The expression eigenvectors as calculated using all eqtlgen samples
@@ -79,8 +79,9 @@ NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp01/proje
 --preadjust false \
 --cell_perc_interactions false \
 -profile standard \
---dev true \
+--dev false \
 -resume
 
 # -resume \
 #-profile slurm
+#standard

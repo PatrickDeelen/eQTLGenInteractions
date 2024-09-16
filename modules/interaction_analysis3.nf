@@ -26,40 +26,27 @@ process IeQTLmapping {
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
 
+    HOME=${PWD}/home
+    mkdir -p ${HOME}
+
     # make a fake gte because limix doesn't work without it
     awk 'BEGIN {OFS="\\t"}; {print $2, $2}' !{fam} > gte.txt
 
-    # determine whether to test SNP-gene pairs or all SNPs within 1Mb
-    qtls=!{params.qtls_to_test}
-    genes=!{params.genes_to_test}
-    if [ "${#qtls}" -gt 1 ]
-    then 
-        arg_line="-fvf !{qtl_ch}"
-    else
-        arg_line="-ff !{qtl_ch} -w 1000000 "
-    fi
-
-    # --interaction_term is a colum from -cf
-    # all variables from -cf are used in model without interaction
-    # -gm gaussnorm does an inverse normal transformation of the expression data
-    
-    python /limix_qtl/Limix_QTL/run_interaction_QTL_analysis.py \
+    python /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/ForDasha/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
      --plink ${plink_base} \
       -af !{limix_annotation} \
       -cf !{covariates} \
       -pf !{tmm_expression} \
       -smf gte.txt \
-      ${arg_line} \
       -od ${outdir} \
-      --interaction_term !{covariate_to_test} \
       -gr !{chunk} \
       -np !{params.num_perm} \
       -maf 0.01 \
-      -c \
-      -gm gaussnorm \
       -hwe 0.0001 \
       --write_permutations \
-      --write_zscore
+      --write_zscore \
+      -fvf !{qtl_ch} \
+      --interaction_term bazinga
 
 
       
@@ -104,7 +91,7 @@ process PlotSTX3NOD2 {
  * Convert the interaction analysis output folder to a text file
  */
 process ConvertIeQTLsToText {
-    echo true
+    debug true
 
      publishDir params.outdir, mode: 'copy', overwrite: true, failOnError: true
 
@@ -156,5 +143,5 @@ workflow RUN_INTERACTION_QTL_MAPPING {
         ConvertIeQTLsToText(IeQTLmapping(interaction_ch).collect())
 
     // Plot the interaction of NOD2 cis-eQTL with STX3 (neutrophil proxy) as a sanity check
-    PlotSTX3NOD2(tmm_expression.combine(covariates_ch).combine(plink_geno).combine(expr_pcs_ch))
+    //  PlotSTX3NOD2(tmm_expression.combine(covariates_ch).combine(plink_geno).combine(expr_pcs_ch))
 }
