@@ -302,6 +302,7 @@ process ConvertVcfToPlink {
 
 }
 
+
 /*
  * Combine per chromosome plink genotype files into one
  */

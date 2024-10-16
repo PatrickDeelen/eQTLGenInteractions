@@ -87,6 +87,7 @@ process PlotSTX3NOD2 {
     }
 }
 
+
 /*
  * Convert the interaction analysis output folder to a text file
  */

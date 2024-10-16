@@ -95,6 +95,7 @@ workflow {
         norm_exp_ch = NormalizeExpression.out.norm_expression_table
         covariates_ch = PREPARE_COVARIATES(params.exp_platform, raw_expr_ch, norm_exp_ch, params.signature_matrix_name, params.deconvolution_method,covars_ch, gene_lengths_ch, annotation_ch, Channel.fromPath(params.genotype_pcs), Channel.fromPath(params.gte), filt_exp_ch)
 
+
     } else {
 
 

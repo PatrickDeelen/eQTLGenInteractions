@@ -82,6 +82,7 @@ NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp01/proje
 --dev false \
 -resume
 
+
 # -resume \
 #-profile slurm
 #standard
