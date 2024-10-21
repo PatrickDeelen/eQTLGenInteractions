@@ -12,7 +12,7 @@ process IeQTLmapping {
 
 
     input:
-        tuple path(tmm_expression), path(bed), path(bim), path(fam), path(covariates), path(limix_annotation), val(covariate_to_test), val(chunk), path(qtl_ch)
+        tuple path(tmm_expression), path(bed), path(bim), path(fam), path(covariates), path(limix_annotation), val(chunk), path(qtl_ch)
     
     // make the output optional for the case when there are no eQTLs to test and the output is empty. If it's not optional then .collect() in the workflow description will not work
     output:
@@ -140,7 +140,7 @@ workflow RUN_INTERACTION_QTL_MAPPING {
             : Channel.fromPath('EMPTY')
     // if run interaction analysis with covariate * genotype interaction terms, preadjust gene expression for other, linear covariates
 
-        interaction_ch = tmm_expression.combine(plink_geno).combine(covariates_ch).combine(limix_annotation).combine(covariate_to_test).combine(chunk).combine(qtl_ch)
+        interaction_ch = tmm_expression.combine(plink_geno).combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
         ConvertIeQTLsToText(IeQTLmapping(interaction_ch).collect())
 
     // Plot the interaction of NOD2 cis-eQTL with STX3 (neutrophil proxy) as a sanity check
