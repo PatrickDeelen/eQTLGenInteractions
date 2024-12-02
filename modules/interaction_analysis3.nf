@@ -32,6 +32,8 @@ process IeQTLmapping {
     # make a fake gte because limix doesn't work without it
     awk 'BEGIN {OFS="\\t"}; {print $2, $2}' !{fam} > gte.txt
 
+    echo "test"
+
     python /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/ForDasha/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
      --plink ${plink_base} \
       -af !{limix_annotation} \

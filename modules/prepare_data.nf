@@ -254,7 +254,7 @@ process ConvertVcfToBgen {
     
     script:
     """
-        ${projectDir}/tools/plink --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --chr $chr
+        ${projectDir}/tools/plink2f --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --chr $chr
     """
 }
 
