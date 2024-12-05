@@ -2,8 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="444d8af7-8a46-4769-9a59-0e4c1c6d6642" name="gearshiftIeqtls">
-        <fileTransfer accessType="SFTP" host="gearshift" port="22" sshConfigId="a2914b96-fa49-437a-a28e-ded4b9d935d1" sshConfig="umcg-pdeelen@gearshift:22 agent" authAgent="true">
+      <webServer id="444d8af7-8a46-4769-9a59-0e4c1c6d6642" name="vaxtronIeqtls">
+        <fileTransfer accessType="SFTP" host="vaxtron" port="22" sshConfigId="55fc69bf-d2d9-43b0-917e-28ff0fe15ea1" sshConfig="umcg-pdeelen@vaxtron:22 agent" authAgent="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

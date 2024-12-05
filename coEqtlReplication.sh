@@ -46,7 +46,7 @@ genotype_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_gen/gen_PCs/Geno
 expression_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_exp/exp_PCs/exp_PCs.txt
 
 # output folder
-output_path=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/test4/
+output_path=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/replicationCoEqtls/
 
 
 # Path to the nextflow interaction analysis folder
@@ -56,8 +56,8 @@ qtls_to_test=${script_folder}/data/sign_qtls_cistrans.txt.gz
 chunk_file=${script_folder}/data/ChunkingFile_test.txt
 exp_platform=RNAseq #options: RNAseq; RNAseq_HGNC; HT12v3; HT12v4; HuRef8; AffyU219; AffyHumanExon
 
-expression_eigenvectors=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/downloadData/EigenvectorsTop1000.txt.gz # The expression eigenvectors as calculated using all eqtlgen samples
-expression_ics=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/downloadData/Ica100.txt.gz # The expression independent components as calculated using all eqtlgen samples
+#expression_eigenvectors=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/downloadData/EigenvectorsTop1000.txt.gz # The expression eigenvectors as calculated using all eqtlgen samples
+#expression_ics=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/downloadData/Ica100.txt.gz # The expression independent components as calculated using all eqtlgen samples
 
 
 mkdir -p ${output_path}
@@ -74,8 +74,6 @@ NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/proje
 --covariate_to_test $covariate_to_test \
 --qtls_to_test $qtls_to_test \
 --genotype_pcs $genotype_pcs_path \
---expression_eigenvectors $expression_eigenvectors \
---expression_ics $expression_ics \
 --chunk_file $chunk_file \
 --outdir ${output_path}  \
 --run_stratified false \

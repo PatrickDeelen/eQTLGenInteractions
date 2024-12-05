@@ -77,7 +77,7 @@ if (params.bgen_dir != '') {
 } 
 
 
-include { PREPARE_COVARIATES; NormalizeExpression; ConvertVcfToBgen; ConvertVcfToPlink; MergePlinkPerChr; MapEigenvectorsAndIcs; Transpose } from './modules/prepare_data.nf'
+include { PREPARE_COVARIATES; NormalizeExpression; ConvertVcfToBgen; MergePlinkPerChr; MapEigenvectorsAndIcs; Transpose } from './modules/prepare_data.nf'
 include { RUN_INTERACTION_QTL_MAPPING; IeQTLmapping } from './modules/interaction_analysis3.nf'
 include { RUN_STRATIFIED_ANALYSIS; RunEqtlMappingPerGenePlink } from './modules/stratified_analysis.nf'
 
@@ -106,25 +106,10 @@ workflow {
         norm_exp_ch = NormalizeExpression.out.norm_expression_table
         covariates_ch = PREPARE_COVARIATES(params.exp_platform, raw_expr_ch, norm_exp_ch, params.signature_matrix_name, params.deconvolution_method,covars_ch, gene_lengths_ch, annotation_ch, Channel.fromPath(params.genotype_pcs), Channel.fromPath(params.gte), filt_exp_ch)
 
-        /*
-         * Prepare genotype data
-         */
-        Channel.empty()
-          .set { bfile_ch }
-        // if no plink genotypes provided convert VCF to plink and combine chromosomes together
-        if (params.bfile == '') {
-          ConvertVcfToPlink(chr_vcf_pairs)
-          MergePlinkPerChr(ConvertVcfToPlink.out.bfile_per_chr_ch.collect()).set {bfile_ch}
-        } else {
-          Channel
-            .from(params.bfile)
-            .ifEmpty { exit 1, "Input plink prefix not found!" }
-            .map { genotypes -> [file("${genotypes}.bed"), file("${genotypes}.bim"), file("${genotypes}.fam")]}
-            .set { bfile_ch }
-        }
 
 
-        RUN_INTERACTION_QTL_MAPPING(Transpose(filt_exp_ch   , "expressionT.txt"), bfile_ch, covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, Channel.fromPath(params.qtls_to_test))
+
+        RUN_INTERACTION_QTL_MAPPING(Transpose(filt_exp_ch   , "expressionT.txt"), covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, Channel.fromPath(params.qtls_to_test), ConvertVcfToBgen(chr_vcf_pairs).bgen_ch.collect())
 
 
     }

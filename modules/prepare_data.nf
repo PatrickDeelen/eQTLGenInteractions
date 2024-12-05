@@ -250,12 +250,23 @@ process ConvertVcfToBgen {
         tuple val(chr), path(vcf_file)
 
     output:
-        tuple path("chr*bgen"), path("chr*sample"), emit: bgen_ch
+        path("chr${chr}.bgen"), emit: bgen_ch
     
     script:
-    """
-        ${projectDir}/tools/plink2f --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --chr $chr
-    """
+    if (params.qtls_to_test == ''){
+               """
+          ${projectDir}/tools/plink2 --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --chr $chr --maf 0.01 --hwe 1e-06 --geno 0.05 --mac 10  --extract-if-info "R2 > 0.4"
+          """
+
+      }
+      else {
+       """
+          zcat  ${params.qtls_to_test} | cut -f 2 | gzip > snpsToTest.txt.gz
+          ${projectDir}/tools/plink2 --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --extract snpsToTest.txt.gz --chr $chr --maf 0.01 --hwe 1e-06 --geno 0.05 --mac 10  --extract-if-info "R2 > 0.4"
+
+       """
+        }
+
 }
 
 /*
@@ -313,13 +324,13 @@ process MergePlinkPerChr {
     input:
         path(plink_files)
     output:
-        tuple path("merged.bed"), path("merged.bim"), path("merged.fam"), emit: bfile_ch
+        tuple path("merged.bgen"), path("merged.sample"), emit: bfile_ch
     shell:
     '''
     plink_exe=!{projectDir}/tools/plink
     for f in chr*bed
     do
-        echo ${f%.bed} >> filelist.txt
+        echo ${f%.bgen} >> filelist.txt
     done
 
     ${plink_exe} --merge-list filelist.txt --make-bed --out merged

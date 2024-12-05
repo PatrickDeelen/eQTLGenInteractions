@@ -11,8 +11,10 @@ process IeQTLmapping {
     //publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
 
 
+
     input:
-        tuple path(tmm_expression), path(bed), path(bim), path(fam), path(covariates), path(limix_annotation), val(chunk), path(qtl_ch)
+       tuple path(tmm_expression), path(covariates), path(limix_annotation), val(chunk), path(qtl_ch)
+       path(bgen_ch)
     
     // make the output optional for the case when there are no eQTLs to test and the output is empty. If it's not optional then .collect() in the workflow description will not work
     output:
@@ -21,25 +23,26 @@ process IeQTLmapping {
     shell:
     '''
 
-    geno=!{bed}
-    plink_base=${geno%.bed}
+    echo !{chunk}
+
+    readarray -d ":" -t strarr <<< !{chunk}
+    chr=${strarr[0]}
+    echo ${chr}
+
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
 
     HOME=${PWD}/home
     mkdir -p ${HOME}
 
-    # make a fake gte because limix doesn't work without it
-    awk 'BEGIN {OFS="\\t"}; {print $2, $2}' !{fam} > gte.txt
 
     echo "test"
 
-    python /groups/umcg-fg/tmp01/projects/eqtlgen-phase2/ForDasha/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
-     --plink ${plink_base} \
+    python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
+     --bgen chr${chr} \
       -af !{limix_annotation} \
       -cf !{covariates} \
       -pf !{tmm_expression} \
-      -smf gte.txt \
       -od ${outdir} \
       -gr !{chunk} \
       -np !{params.num_perm} \
@@ -128,12 +131,12 @@ process ConvertIeQTLsToText {
 workflow RUN_INTERACTION_QTL_MAPPING {   
     take:
         tmm_expression
-	    plink_geno
         covariates_ch
 	    limix_annotation
         covariate_to_test
 	    chunk
         qtl_ch
+        bgen_ch
 
     main:
 
@@ -142,8 +145,8 @@ workflow RUN_INTERACTION_QTL_MAPPING {
             : Channel.fromPath('EMPTY')
     // if run interaction analysis with covariate * genotype interaction terms, preadjust gene expression for other, linear covariates
 
-        interaction_ch = tmm_expression.combine(plink_geno).combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
-        ConvertIeQTLsToText(IeQTLmapping(interaction_ch).collect())
+        interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
+        IeQTLmapping(interaction_ch, bgen_ch)
 
     // Plot the interaction of NOD2 cis-eQTL with STX3 (neutrophil proxy) as a sanity check
     //  PlotSTX3NOD2(tmm_expression.combine(covariates_ch).combine(plink_geno).combine(expr_pcs_ch))
