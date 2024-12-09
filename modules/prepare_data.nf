@@ -247,26 +247,28 @@ process ConvertVcfToBgen {
     label "medium2"
 
     input:
-        tuple val(chr), path(vcf_file)
+        path vcfDir
 
     output:
-        path("chr${chr}.bgen"), emit: bgen_ch
+        path("merged.bgen"), emit: bgen_ch
     
     script:
     if (params.qtls_to_test == ''){
                """
-          ${projectDir}/tools/plink2 --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --chr $chr --maf 0.01 --hwe 1e-06 --geno 0.05 --mac 10  --extract-if-info "R2 > 0.4"
+          java -jar /tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP
           """
 
       }
       else {
        """
           zcat  ${params.qtls_to_test} | cut -f 2 | gzip > snpsToTest.txt.gz
-          ${projectDir}/tools/plink2 --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --extract snpsToTest.txt.gz --chr $chr --maf 0.01 --hwe 1e-06 --geno 0.05 --mac 10  --extract-if-info "R2 > 0.4"
 
+
+            java -jar ${projectDir}/tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt.gz
        """
         }
-
+        //--variantFilterList snpsToTest.txt.gz --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4
+    //${projectDir}/tools/plink2 --vcf $vcf_file dosage=DS --export bgen-1.2 ref-first --out chr${chr} --extract snpsToTest.txt.gz --chr $chr --maf 0.01 --hwe 1e-06 --geno 0.05 --mac 10  --extract-if-info "R2 > 0.4"
 }
 
 /*
@@ -317,25 +319,22 @@ process ConvertVcfToPlink {
 /*
  * Combine per chromosome plink genotype files into one
  */
-process MergePlinkPerChr {
+process MergeBgenPerChr {
     label "medium2"
 
     //echo true
     input:
         path(plink_files)
     output:
-        tuple path("merged.bgen"), path("merged.sample"), emit: bfile_ch
+        tuple path("merged.bgen"), emit: bfile_ch
     shell:
     '''
-    plink_exe=!{projectDir}/tools/plink
-    for f in chr*bed
-    do
-        echo ${f%.bgen} >> filelist.txt
-    done
-
-    ${plink_exe} --merge-list filelist.txt --make-bed --out merged
+        echo !{plink_files}
+        exit 1
     '''
 }
+
+
 
 /*
  * Prepare covariate table: run deconvolution, estimate RNA quality, combine all covariates together

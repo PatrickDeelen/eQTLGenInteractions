@@ -77,7 +77,7 @@ if (params.bgen_dir != '') {
 } 
 
 
-include { PREPARE_COVARIATES; NormalizeExpression; ConvertVcfToBgen; MergePlinkPerChr; MapEigenvectorsAndIcs; Transpose } from './modules/prepare_data.nf'
+include { PREPARE_COVARIATES; NormalizeExpression; ConvertVcfToBgen; MergeBgenPerChr; MapEigenvectorsAndIcs; Transpose } from './modules/prepare_data.nf'
 include { RUN_INTERACTION_QTL_MAPPING; IeQTLmapping } from './modules/interaction_analysis3.nf'
 include { RUN_STRATIFIED_ANALYSIS; RunEqtlMappingPerGenePlink } from './modules/stratified_analysis.nf'
 
@@ -107,9 +107,7 @@ workflow {
         covariates_ch = PREPARE_COVARIATES(params.exp_platform, raw_expr_ch, norm_exp_ch, params.signature_matrix_name, params.deconvolution_method,covars_ch, gene_lengths_ch, annotation_ch, Channel.fromPath(params.genotype_pcs), Channel.fromPath(params.gte), filt_exp_ch)
 
 
-
-
-        RUN_INTERACTION_QTL_MAPPING(Transpose(filt_exp_ch   , "expressionT.txt"), covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, Channel.fromPath(params.qtls_to_test), ConvertVcfToBgen(chr_vcf_pairs).bgen_ch.collect())
+        RUN_INTERACTION_QTL_MAPPING(Transpose(filt_exp_ch   , "expressionT.txt"), covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, Channel.fromPath(params.qtls_to_test),  ConvertVcfToBgen(params.vcf_dir).bgen_ch)
 
 
     }
