@@ -23,9 +23,7 @@ process IeQTLmapping {
 
     echo !{chunk}
 
-    readarray -d ":" -t strarr <<< !{chunk}
-    chr=${strarr[0]}
-    echo ${chr}
+    echo "8"
 
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
