@@ -22,6 +22,7 @@ set -f
 
 c="LL"
 
+
 # Define paths
 base_folder=/groups/umcg-bios/tmp04/projects/BIOS_for_eQTLGenII/pipeline/20220426/
 # Genotype data
@@ -50,7 +51,7 @@ output_path=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/replicati
 
 
 # Path to the nextflow interaction analysis folder
-script_folder=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/
+script_folder=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions/
 
 qtls_to_test=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/sig_Qtls_sceQTLGen_062024_3.txt.gz
 chunk_file=${script_folder}/data/ChunkingFile.txt
@@ -63,7 +64,7 @@ expression_ics=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/downlo
 mkdir -p ${output_path}
 
 # Command:
-NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/InteractionAnalysis.nf \
+NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions/InteractionAnalysis.nf \
 --vcf_dir $vcf_dir_path \
 --raw_expfile ${raw_exp_path} \
 --norm_expfile ${norm_exp_path} \

@@ -110,6 +110,7 @@ workflow {
         RUN_INTERACTION_QTL_MAPPING(Transpose(filt_exp_ch   , "expressionT.txt"), covariates_ch, annotation_ch, Channel.of(params.covariate_to_test), chunk_ch.map { it[1] }, Channel.fromPath(params.qtls_to_test),  ConvertVcfToBgen(params.vcf_dir).bgen_ch)
 
 
+
     }
 }
 

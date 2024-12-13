@@ -5,7 +5,7 @@
       <paths name="vaxtronIeqtls">
         <serverdata>
           <mappings>
-            <mapping deploy="/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
