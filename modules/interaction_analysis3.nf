@@ -8,9 +8,7 @@ nextflow.enable.dsl = 2
 process IeQTLmapping {
     tag "Chunk: $chunk"
 
-    //publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
-
-
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
 
     input:
        tuple path(tmm_expression), path(covariates), path(limix_annotation), val(chunk), path(qtl_ch)
@@ -39,7 +37,7 @@ process IeQTLmapping {
     echo "test"
 
     python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
-     --bgen chr${chr} \
+     --bgen merged \
       -af !{limix_annotation} \
       -cf !{covariates} \
       -pf !{tmm_expression} \

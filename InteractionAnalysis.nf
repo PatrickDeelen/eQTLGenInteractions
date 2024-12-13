@@ -25,7 +25,7 @@ params.lab_cell_perc = ''
 
 params.signature_matrix_name = "LM22"
 params.deconvolution_method = "dtangle"
-params.num_perm = 3
+params.num_perm = 1
 
 params.run_stratified = false
 params.preadjust = false

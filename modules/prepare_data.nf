@@ -261,10 +261,10 @@ process ConvertVcfToBgen {
       }
       else {
        """
-          zcat  ${params.qtls_to_test} | cut -f 2 | gzip > snpsToTest.txt.gz
+          zcat  ${params.qtls_to_test} | cut -f 2  > snpsToTest.txt
 
-
-            java -jar ${projectDir}/tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt.gz
+            echo "8"
+            java -jar ${projectDir}/tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt
        """
         }
         //--variantFilterList snpsToTest.txt.gz --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4
