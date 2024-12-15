@@ -34,7 +34,7 @@ process IeQTLmapping {
 
     echo "test"
 
-    python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
+    python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
      --bgen merged \
       -af !{limix_annotation} \
       -cf !{covariates} \
