@@ -28,7 +28,7 @@ process IeQTLmapping {
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
 
-    HOME=${PWD}/home
+    HOME="./home"
     mkdir -p ${HOME}
 
 
@@ -122,7 +122,30 @@ process ConvertIeQTLsToText {
     """
 }
 
+process CombineResults {
 
+
+     publishDir params.outdir, mode: 'copy', overwrite: true, failOnError: true
+
+    input:
+    path limix_out_files
+
+    output:
+        path "feature_metadata.txt.gz"
+        path "snp_metadata.txt.gz"
+
+    script:
+    """
+
+
+        echo -e "feature_id\tchromosome\tstart\tend\tGeneNamebiotype\tn_samples\tn_e_samples"
+        tail -n +2 limix_out/feature_metadata* >> feature_metadata.txt
+        gzip feature_metadata.txt
+
+
+    """
+
+}
 
 workflow RUN_INTERACTION_QTL_MAPPING {   
     take:
@@ -142,7 +165,7 @@ workflow RUN_INTERACTION_QTL_MAPPING {
     // if run interaction analysis with covariate * genotype interaction terms, preadjust gene expression for other, linear covariates
 
         interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
-        IeQTLmapping(interaction_ch, bgen_ch)
+        CombineResults(IeQTLmapping(interaction_ch, bgen_ch).collect())
 
     // Plot the interaction of NOD2 cis-eQTL with STX3 (neutrophil proxy) as a sanity check
     //  PlotSTX3NOD2(tmm_expression.combine(covariates_ch).combine(plink_geno).combine(expr_pcs_ch))
