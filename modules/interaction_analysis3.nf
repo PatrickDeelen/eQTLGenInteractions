@@ -8,7 +8,7 @@ nextflow.enable.dsl = 2
 process IeQTLmapping {
     tag "Chunk: $chunk"
 
-    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true, pattern: 'beta*'
 
     input:
        tuple path(tmm_expression), path(covariates), path(limix_annotation), val(chunk), path(qtl_ch)
@@ -16,23 +16,24 @@ process IeQTLmapping {
     
     // make the output optional for the case when there are no eQTLs to test and the output is empty. If it's not optional then .collect() in the workflow description will not work
     output:
-        path "limix_out/*", optional: true
+        path "limix_out/zScore_*.txt.gz", optional: true, emit: zscoresTest
+        path "limix_out/perm/zScore_*.txt.gz", optional: true, emit: zscoresPerm
+        path "limix_out/feature_metadata_*.txt", optional: true, emit: featureMeta
+        path "limix_out/snp_metadata_*.txt", optional: true, emit: snpMeta
+        path "limix_out/beta*" , optional: true, emit: betas
 
     shell:
     '''
 
     echo !{chunk}
 
-    echo "8"
+    echo "2"
 
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
 
     HOME="./home"
     mkdir -p ${HOME}
-
-
-    echo "test"
 
     python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
      --bgen merged \
@@ -49,7 +50,8 @@ process IeQTLmapping {
       -fvf !{qtl_ch} \
       --interaction_term bazinga
 
-
+    mkdir -p ${outdir}/perm
+    mv ${outdir}/*_perm.txt.gz ${outdir}/perm
       
     '''
 }
@@ -123,25 +125,53 @@ process ConvertIeQTLsToText {
 }
 
 process CombineResults {
-
+    tag("Merge")
 
      publishDir params.outdir, mode: 'copy', overwrite: true, failOnError: true
 
     input:
-    path limix_out_files
+         path zscoresTest
+         path zscorePerm
+         path featureMeta
+         path snpMeta
+
 
     output:
-        path "feature_metadata.txt.gz"
-        path "snp_metadata.txt.gz"
+        path "feature_metadata.txt.gz*"
+        path "snp_metadata.txt.gz*"
+        path "interactionZscoreTest*"
+        path "interactionZscorePermutation*"
 
     script:
     """
 
-
         echo -e "feature_id\tchromosome\tstart\tend\tGeneNamebiotype\tn_samples\tn_e_samples"
-        tail -n +2 limix_out/feature_metadata* >> feature_metadata.txt
+        tail -n +2 feature_metadata* >> feature_metadata.txt
         gzip feature_metadata.txt
 
+        echo -e "snp_id\tchromosome\tposition\tassessed_allele\tcall_rate\tmaf\thwe_p"
+        tail -n +2 snp_metadata* >> snp_metadata.txt
+        gzip snp_metadata.txt
+
+        java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
+            --mode ROW_CONCAT \
+            --input ./ \
+            --output interactionZscoreTest \
+            --filePattern "zScore_([^_]+)\\.txt\\.gz" \
+            --datasetName "Interaction z-scores !{params.cohort}" \
+            --rowContent "Variants" \
+            --colContent "Covariates"
+
+        java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
+            --mode ROW_CONCAT \
+            --input ./ \
+            --output interactionZscorePermutation \
+            --filePattern "zScore_(.+)_perm\\.txt\\.gz" \
+            --datasetName "Permuted interaction z-scores !{params.cohort}" \
+            --rowContent "Variants" \
+            --colContent "Covariates_PermutationRound"
+
+        echo "Conversion complete"
 
     """
 
@@ -164,8 +194,19 @@ workflow RUN_INTERACTION_QTL_MAPPING {
             : Channel.fromPath('EMPTY')
     // if run interaction analysis with covariate * genotype interaction terms, preadjust gene expression for other, linear covariates
 
-        interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
-        CombineResults(IeQTLmapping(interaction_ch, bgen_ch).collect())
+
+       interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
+       IeQTLmapping(interaction_ch, bgen_ch)
+
+       zscoreTest_ch = IeQTLmapping.out.zscoresTest.flatten().unique().collect()
+       zscorePerm_ch = IeQTLmapping.out.zscoresPerm.flatten().unique().collect()
+       featureMeta_ch = IeQTLmapping.out.featureMeta.flatten().unique().collect()
+       snpMeta_ch = IeQTLmapping.out.snpMeta.flatten().unique().collect()
+
+
+       // zscoreTest_ch.concat(zscorePerm_ch, featureMeta_ch, snpMeta_ch).collect().view()
+
+       CombineResults(zscoreTest_ch, zscorePerm_ch, featureMeta_ch, snpMeta_ch)
 
     // Plot the interaction of NOD2 cis-eQTL with STX3 (neutrophil proxy) as a sanity check
     //  PlotSTX3NOD2(tmm_expression.combine(covariates_ch).combine(plink_geno).combine(expr_pcs_ch))
