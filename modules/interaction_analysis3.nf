@@ -148,18 +148,20 @@ process CombineResults {
         echo -e "feature_id\tchromosome\tstart\tend\tGeneNamebiotype\tn_samples\tn_e_samples"
         tail -n +2 feature_metadata* >> feature_metadata.txt
         gzip feature_metadata.txt
+        md5sum feature_metadata.txt > feature_metadata.txt.md5
 
         echo -e "snp_id\tchromosome\tposition\tassessed_allele\tcall_rate\tmaf\thwe_p"
         tail -n +2 snp_metadata* >> snp_metadata.txt
         gzip snp_metadata.txt
+        md5sum snp_metadata.txt > snp_metadata.txt.md5
 
         java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
             --mode ROW_CONCAT \
             --input ./ \
             --output interactionZscoreTest \
             --filePattern "zScore_([^_]+)\\.txt\\.gz" \
-            --datasetName "Interaction z-scores !{params.cohort}" \
-            --rowContent "Variants" \
+            --datasetName "Interaction z-scores ${params.cohort}" \
+            --rowContent "Variant_PermutationRound_eQtlGene" \
             --colContent "Covariates"
 
         java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
@@ -167,9 +169,9 @@ process CombineResults {
             --input ./ \
             --output interactionZscorePermutation \
             --filePattern "zScore_(.+)_perm\\.txt\\.gz" \
-            --datasetName "Permuted interaction z-scores !{params.cohort}" \
-            --rowContent "Variants" \
-            --colContent "Covariates_PermutationRound"
+            --datasetName "Permuted interaction z-scores ${params.cohort}" \
+            --rowContent "Variant_eQtlGene" \
+            --colContent "Covariates"
 
         echo "Conversion complete"
 
