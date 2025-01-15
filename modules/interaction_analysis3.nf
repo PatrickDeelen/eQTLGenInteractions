@@ -51,7 +51,7 @@ process IeQTLmapping {
       --interaction_term bazinga
 
     mkdir -p ${outdir}/perm
-    mv ${outdir}/*_perm.txt.gz ${outdir}/perm
+    mv ${outdir}/*_perm.txt.gz ${outdir}/perm || echo "No results"
       
     '''
 }
