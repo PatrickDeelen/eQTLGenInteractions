@@ -39,7 +39,7 @@ readDoubleMatrix <- function(path){
 
 expression <- readDoubleMatrix(args$expression)
 eigenvectors <- readDoubleMatrix(args$eigenvectors)
-ics <- readDoubleMatrix(args$ics)   
+ics <- readDoubleMatrix(args$ics)
 
 sharedGenes <- intersect(rownames(eigenvectors), colnames(expression))
 
