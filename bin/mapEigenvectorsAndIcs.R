@@ -23,7 +23,7 @@ readDoubleMatrix <- function(path){
 
   firstColName <- scan(path, what = "character", n = 1, sep = '\t', quiet = T )
   if(firstColName == ""){
-    # if there is no column name for the first column ...1is used by read_delim of the readr lib
+    # if there is no column name for the first column ...1 is used by read_delim of the readr lib
     firstColName <- "...1"
   }
 
@@ -40,6 +40,11 @@ readDoubleMatrix <- function(path){
 expression <- readDoubleMatrix(args$expression)
 eigenvectors <- readDoubleMatrix(args$eigenvectors)
 ics <- readDoubleMatrix(args$ics)
+
+# Sometimes the expression matrix is transposed
+if(length(intersect(rownames(eigenvectors), colnames(expression)) == 0){
+    expression <- t(expression)
+}
 
 sharedGenes <- intersect(rownames(eigenvectors), colnames(expression))
 
