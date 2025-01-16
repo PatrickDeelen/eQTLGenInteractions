@@ -39,12 +39,7 @@ readDoubleMatrix <- function(path){
 
 expression <- readDoubleMatrix(args$expression)
 eigenvectors <- readDoubleMatrix(args$eigenvectors)
-ics <- readDoubleMatrix(args$ics)
-
-# Sometimes the expression matrix is transposed
-if(length(intersect(rownames(eigenvectors), colnames(expression)) == 0){
-    expression <- t(expression)
-}
+ics <- readDoubleMatrix(args$ics)   
 
 sharedGenes <- intersect(rownames(eigenvectors), colnames(expression))
 
