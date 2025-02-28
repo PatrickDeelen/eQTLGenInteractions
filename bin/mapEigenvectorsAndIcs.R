@@ -45,6 +45,8 @@ sharedGenes <- intersect(rownames(eigenvectors), colnames(expression))
 
 length(sharedGenes)
 
+
+
 if(length(sharedGenes) < 10000){
   stop ("Not enough genes matching")
 }

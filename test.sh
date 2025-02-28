@@ -66,7 +66,7 @@ cd ${output_path}
 
 
 # Command:
-NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions/InteractionAnalysis.nf \
+NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions/test2.nf \
 --vcf_dir $vcf_dir_path \
 --raw_expfile ${raw_exp_path} \
 --norm_expfile ${norm_exp_path} \

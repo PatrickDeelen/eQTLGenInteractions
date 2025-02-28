@@ -6,7 +6,9 @@ nextflow.enable.dsl = 2
  * Covariates will be included in the model as linear terms, and the $covariate_to_test will also be included as an interaction with genotype
  */
 process IeQTLmapping {
+    label "ieQtlMapping"
     tag "Chunk: $chunk"
+
 
     publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true, pattern: 'beta*'
 
@@ -27,7 +29,7 @@ process IeQTLmapping {
 
     echo !{chunk}
 
-    echo "2"
+    echo "3"
 
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
@@ -52,7 +54,9 @@ process IeQTLmapping {
 
     mkdir -p ${outdir}/perm
     mv ${outdir}/*_perm.txt.gz ${outdir}/perm || echo "No results"
-      
+
+    echo "Interaction mapping and moving data done"
+
     '''
 }
 
@@ -125,15 +129,17 @@ process ConvertIeQTLsToText {
 }
 
 process CombineResults {
+    memory '10 GB'
+    time '4h'
     tag("Merge")
 
      publishDir params.outdir, mode: 'copy', overwrite: true, failOnError: true
 
     input:
-         path zscoresTest
-         path zscorePerm
-         path featureMeta
-         path snpMeta
+        path zscoresTest
+        path zscorePerm
+        path featureMeta
+        path snpMeta
 
 
     output:
@@ -142,26 +148,30 @@ process CombineResults {
         path "interactionZscoreTest*"
         path "interactionZscorePermutation*"
 
-    script:
-    """
+    shell:
+    '''
 
-        echo -e "feature_id\tchromosome\tstart\tend\tGeneNamebiotype\tn_samples\tn_e_samples"
-        tail -n +2 feature_metadata* >> feature_metadata.txt
+        echo -e "feature_id\tchromosome\tstart\tend\tGene\tNamebiotype\tn_samples\tn_e_samples" > feature_metadata.txt
+        for file in feature_metadata*; do
+            tail -n +2 $file >> feature_metadata.txt
+        done
         gzip feature_metadata.txt
-        md5sum feature_metadata.txt > feature_metadata.txt.md5
+        md5sum feature_metadata.txt.gz > feature_metadata.txt.gz.md5
 
-        echo -e "snp_id\tchromosome\tposition\tassessed_allele\tcall_rate\tmaf\thwe_p"
-        tail -n +2 snp_metadata* >> snp_metadata.txt
+        echo -e "snp_id\tchromosome\tposition\tassessed_allele\tcall_rate\tmaf\thwe_p" > snp_metadata.txt
+        for file in snp_metadata*; do
+            tail -n +2 $file >> snp_metadata.txt
+        done
         gzip snp_metadata.txt
-        md5sum snp_metadata.txt > snp_metadata.txt.md5
+        md5sum snp_metadata.txt.gz > snp_metadata.txt.gz.md5
 
         java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
             --mode ROW_CONCAT \
             --input ./ \
             --output interactionZscoreTest \
             --filePattern "zScore_([^_]+)\\.txt\\.gz" \
-            --datasetName "Interaction z-scores ${params.cohort}" \
-            --rowContent "Variant_PermutationRound_eQtlGene" \
+            --datasetName "Interaction z-scores !{params.cohort_name}" \
+            --rowContent "Variant_eQtlGene" \
             --colContent "Covariates"
 
         java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
@@ -169,13 +179,13 @@ process CombineResults {
             --input ./ \
             --output interactionZscorePermutation \
             --filePattern "zScore_(.+)_perm\\.txt\\.gz" \
-            --datasetName "Permuted interaction z-scores ${params.cohort}" \
-            --rowContent "Variant_eQtlGene" \
+            --datasetName "Permuted interaction z-scores !{params.cohort_name}" \
+            --rowContent "Variant_PermutationRound_eQtlGene" \
             --colContent "Covariates"
 
         echo "Conversion complete"
 
-    """
+     '''
 
 }
 
@@ -198,15 +208,17 @@ workflow RUN_INTERACTION_QTL_MAPPING {
 
 
        interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
-       IeQTLmapping(interaction_ch, bgen_ch)
+       ieResult = IeQTLmapping(interaction_ch, bgen_ch)
 
-       zscoreTest_ch = IeQTLmapping.out.zscoresTest.flatten().unique().collect()
-       zscorePerm_ch = IeQTLmapping.out.zscoresPerm.flatten().unique().collect()
-       featureMeta_ch = IeQTLmapping.out.featureMeta.flatten().unique().collect()
-       snpMeta_ch = IeQTLmapping.out.snpMeta.flatten().unique().collect()
+        zscoreTest_ch = ieResult.zscoresTest.flatten().map{it -> [ it.baseName, it ]}.groupTuple().map{ it[1][0]}.collect()
+        zscorePerm_ch = ieResult.zscoresPerm.flatten().map{it -> [ it.baseName, it ]}.groupTuple().map{ it[1][0]}.collect()
+       featureMeta_ch = ieResult.featureMeta.flatten().collect()
+       snpMeta_ch = ieResult.snpMeta.flatten().collect()
 
 
        // zscoreTest_ch.concat(zscorePerm_ch, featureMeta_ch, snpMeta_ch).collect().view()
+
+        //zscoreTest_ch.view()
 
        CombineResults(zscoreTest_ch, zscorePerm_ch, featureMeta_ch, snpMeta_ch)
 
