@@ -60,7 +60,25 @@ process IeQTLmapping {
     '''
 }
 
+process PcCorrection {
+    label "ieQtlMapping"
+    tag "Chunk: $chunk"
 
+
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true, pattern: 'beta*'
+
+    input:
+       path(tmm_expression)
+       path(covariates)
+
+    output:
+        path "correctedExpression.txt"
+
+    shell:
+        """
+            Rscript $projectDir/bin/covCorrection.R
+        """
+}
 
 /*
  * Plot the interaction of rs1981760-NOD2 cis-eQTL with STX3 gene expression (a proxy for neutrophil percentage) - just a sanity check
@@ -206,6 +224,8 @@ workflow RUN_INTERACTION_QTL_MAPPING {
             : Channel.fromPath('EMPTY')
     // if run interaction analysis with covariate * genotype interaction terms, preadjust gene expression for other, linear covariates
 
+
+         tmm_expression = PcCorrection(tmm_expression, covariates_ch)
 
        interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
        ieResult = IeQTLmapping(interaction_ch, bgen_ch)
