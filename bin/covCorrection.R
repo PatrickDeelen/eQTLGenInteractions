@@ -29,7 +29,7 @@ readDoubleMatrix <- function(path){
 Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 10)
 
 covariates <- readDoubleMatrix("covariates.combined.txt")
-covariates <- covariates[,c(paste0("Comp", 1:50),"AvgExprCorrelation")]
+covariates <- covariates[,c(paste0("Comp", 1:25),"AvgExprCorrelation")]
 covariates <- cbind(1,covariates)
 
 geneExp <- readDoubleMatrix("expressionT.txt")
