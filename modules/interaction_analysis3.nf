@@ -65,7 +65,7 @@ process PcCorrection {
     tag "Chunk: $chunk"
 
 
-    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true, pattern: 'beta*'
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
 
     input:
        path(tmm_expression)
@@ -76,6 +76,7 @@ process PcCorrection {
 
     shell:
         """
+            echo 1
             Rscript $projectDir/bin/covCorrection.R
         """
 }
@@ -169,7 +170,7 @@ process CombineResults {
     shell:
     '''
 
-        echo -e "feature_id\tchromosome\tstart\tend\tGene\tNamebiotype\tn_samples\tn_e_samples" > feature_metadata.txt
+        echo -e "feature_id\tchromosome\tstart\tend\tGeneName\tbiotype\tn_samples\tn_e_samples" > feature_metadata.txt
         for file in feature_metadata*; do
             tail -n +2 $file >> feature_metadata.txt
         done

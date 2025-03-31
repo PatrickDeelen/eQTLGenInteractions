@@ -246,11 +246,14 @@ process Transpose {
 process ConvertVcfToBgen {
     label "medium2"
 
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
+
     input:
         path vcfDir
 
     output:
         tuple path("merged.bgen"), path("merged.bgen.metafile"), emit: bgen_ch
+        path("merged.sample")
     
     script:
     if (params.qtls_to_test == ''){
@@ -259,6 +262,7 @@ process ConvertVcfToBgen {
                    HOME=${PWD}/home
                    mkdir -p ${HOME}
 
+echo 2
           java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP
           python -c "from bgen_reader import read_bgen; bgen = read_bgen('merged.bgen', verbose=False)"
           """
