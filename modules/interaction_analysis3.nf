@@ -37,7 +37,7 @@ process IeQTLmapping {
     HOME="./home"
     mkdir -p ${HOME}
 
-    python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
+    python /tools/Limix/specialized_lm_interaction_QTL_runner.py \
      --bgen merged \
       -af !{limix_annotation} \
       -cf !{covariates} \
@@ -184,7 +184,7 @@ process CombineResults {
         gzip snp_metadata.txt
         md5sum snp_metadata.txt.gz > snp_metadata.txt.gz.md5
 
-        java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
+        /tools/jdk-21.0.6+7/bin/java -jar /tools/Datg-tool-1.2/Datg-tool.jar \
             --mode ROW_CONCAT \
             --input ./ \
             --output interactionZscoreTest \
@@ -193,7 +193,7 @@ process CombineResults {
             --rowContent "Variant_eQtlGene" \
             --colContent "Covariates"
 
-        java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/Datg-tool-1.1/Datg-tool.jar \
+        /tools/jdk-21.0.6+7/bin/java -jar /tools/Datg-tool-1.2/Datg-tool.jar \
             --mode ROW_CONCAT \
             --input ./ \
             --output interactionZscorePermutation \

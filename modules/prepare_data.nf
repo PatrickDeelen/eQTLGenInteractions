@@ -89,7 +89,7 @@ process CombineCovariatesRNAqual {
     script:
 
       """
-      echo "test6"
+      echo "test8"
       Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -c ${cell_counts} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual} -v ${eigenAndIc} -e ${filt_exp_ch}
        md5sum covariates.combined.txt > covariates.combined.txt.md5
        md5sum availableCovariates.txt > availableCovariates.txt.md5
@@ -263,7 +263,7 @@ process ConvertVcfToBgen {
                    mkdir -p ${HOME}
 
 echo 2
-          java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP
+          java -jar /tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP
           python -c "from bgen_reader import read_bgen; bgen = read_bgen('merged.bgen', verbose=False)"
           """
 
@@ -281,7 +281,7 @@ echo 2
     mkdir -p \${HOME}
 
 
-            java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt
+            java -jar /tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt
             python -c "from bgen_reader import read_bgen; bgen = read_bgen('merged.bgen', verbose=False)"
        """
         }

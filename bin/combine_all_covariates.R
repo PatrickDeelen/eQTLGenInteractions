@@ -102,8 +102,11 @@ if (! is.null(args$cell_counts) && args$cell_counts != "NA"){
   cat("No cell counts provided!\n")
 
 }
-str(covar)
 
+
+if(nrow(covar) == 0){
+    stop("Something went wrong")
+}
 
 
 # add genotype PCs
@@ -170,7 +173,7 @@ if(any(anyMissingSample)){
 cat("Number of covariates in the combined file:", ncol(covar_merged), "\n")
 cat("Number of samples with covariate data available:", nrow(covar_merged), "\n")
 
-
+cat("Test", "\n")
 # run INT on general covariates, cell counts and RNA quality
 covar_names_for_INT <- names(which(apply(covar_merged, 2, function(x) length(unique(x)) > 3)))
 covar_merged_int <- cbind(covar_merged[, !colnames(covar_merged) %in% covar_names_for_INT, drop =F], apply(covar_merged[,covar_names_for_INT, drop = F], 2, function(x) qnorm((rank(x,na.last="keep")-0.5)/sum(!is.na(x))) ))
