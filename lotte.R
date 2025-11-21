@@ -18,7 +18,7 @@ readDoubleMatrix <- function(path){
 }
 
 
-listPerCelltypeMedianList <- list()
+#listPerCelltypeMedianList <- list()
 listPerCelltypeMeanList <- list()
 
 #cellDataPath <- "/groups/umcg-franke-scrna/tmp04/projects/sc-eqtlgen-consortium-pipeline/ongoing/wg3/wg3_oneK1k/input/"
@@ -70,7 +70,7 @@ for(l in c("L1", "L2")){
           }
           
           
-          listPerCelltypeMedianList[[combinedName]] <- apply(exp, 1, median)
+          #listPerCelltypeMedianList[[combinedName]] <- apply(exp, 1, median)
           listPerCelltypeMeanList[[combinedName]] <- apply(exp, 1, mean)
           
         }
@@ -82,13 +82,12 @@ for(l in c("L1", "L2")){
 }
 
 
-names(listPerCelltypeMedianList)
-listPerCelltypeMedianList[["L1-Platelet"]] <- NULL
-listPerCelltypeMedianList[["L1-other_T"]] <- NULL
+names(listPerCelltypeMeanList)
 
 listPerCelltypeMeanList[["L1-Platelet"]] <- NULL
 listPerCelltypeMeanList[["L1-other_T"]] <- NULL
-
+listPerCelltypeMeanList[["L1-unannotated"]] <- NULL
+listPerCelltypeMeanList[["L1-plasmablast"]] <- NULL
 
 geneNames <- sapply(listPerCelltypeMeanList, names)
 
@@ -101,26 +100,18 @@ any(is.na(allGenes))
 
 str(allGenes)
 
-listPerCelltypeMedian <- lapply(listPerCelltypeMedianList, function(g){g[allGenes]})
+#listPerCelltypeMedian <- lapply(listPerCelltypeMedianList, function(g){g[allGenes]})
 listPerCelltypeMean <- lapply(listPerCelltypeMeanList, function(g){g[allGenes]})
 
-str(listPerCelltypeMedianList)
 
-perCelltypeMedian <- do.call(cbind, listPerCelltypeMedian)
 perCelltypeMean <- do.call(cbind, listPerCelltypeMean)
 
 rownames(perCelltypeMean) <- allGenes
-rownames(perCelltypeMedian) <- allGenes
 
-sum(is.na(perCelltypeMedian))
-perCelltypeMedian[is.na(perCelltypeMedian)] <- 0
+sum(is.na(perCelltypeMean))
 perCelltypeMean[is.na(perCelltypeMean)] <- 0
 
-str(rownames(perCelltypeMean))
-str( rownames(perCelltypeMedian))
-
 any(is.na(rownames(perCelltypeMean)))
-
 
 geneMapping <- read.delim("/groups/umcg-fg/tmp04/projects/downstreamer/depict2_bundle/reference_datasets/human_b37/genes_Ensembl94.txt")
 
@@ -134,16 +125,9 @@ rownames(perCelltypeMean) <- updatedRownames
 perCelltypeMean <- perCelltypeMean[(rownames(perCelltypeMean) %in% geneMapping$Gene.stable.ID),]
 
 
-hist(apply(perCelltypeMedian, 1, function(a){sum(a>0)}))
-
-hist(apply(perCelltypeMedian, 1, mean), breaks = 100)
-hist(apply(perCelltypeMedian, 1, median), breaks = 100)
 
 hist(apply(perCelltypeMean, 1, mean), breaks = 100)
-hist(apply(perCelltypeMean, 1, median), breaks = 100)
 
-layout(matrix(1:2,nrow = 1))
-hist(apply(perCelltypeMedian, 1, function(a){sum(a>0.1)}), breaks = length(listPerCelltypeMedianList))
 
 hist(apply(perCelltypeMean, 1, function(a){sum(a>0.05)}), breaks = length(listPerCelltypeMeanList))
 
@@ -158,8 +142,8 @@ perCelltypeMean2 <- perCelltypeMean[apply(perCelltypeMean, 1, mean) >= 0.2,]
 dim(perCelltypeMean2)
 
 hist(perCelltypeMean2[,2], breaks = 100)
-
-dim(perCelltypeMean2)
+str(perCelltypeMean2)
+colnames(perCelltypeMean2)
 #subset to genes scored by pascalX
 perCelltypeMean2 <- perCelltypeMean2[(rownames(perCelltypeMean2) %in% geneMapping$Gene.stable.ID) ,]
 
@@ -179,7 +163,7 @@ heatmap3(cor(perCelltypeMean2Centered), scale = "none", col = colorRampPalette(b
 str(perCelltypeMean2Centered)
 
 
-write.table(perCelltypeMean2, file = gzfile("/groups/umcg-fg/tmp04/projects/downstreamer/lotte/singleCellData/oneK1K_meanPerCelltype.txt.gz"), sep = "\t", quote = F, col.names = NA)
+write.table(perCelltypeMean2, file = gzfile("/groups/umcg-fg/tmp04/projects/downstreamer/lotte/singleCellData/multiome_meanPerCelltype.txt.gz"), sep = "\t", quote = F, col.names = NA)
 write.table(perCelltypeMean2Centered, file = gzfile("/groups/umcg-fg/tmp04/projects/downstreamer/lotte/singleCellData/oneK1K_meanPerCelltypeCentered.txt.gz"), sep = "\t", quote = F, col.names = NA)
 
 hist(perCelltypeMean2Centered[,6], breaks = 100)
@@ -194,8 +178,9 @@ rownames(recount3median) <- gsub("\\..*", "", rownames(recount3median))
 all(rownames(recount3medianCenter) == rownames(recount3median))
 
 
-sharedGenes <- intersect(rownames(recount3medianCenter), rownames(perCelltypeMean2Centered))
+sharedGenes <- intersect(rownames(recount3medianCenter), rownames(perCelltypeMean2))
 
+heatmap3(cor(perCelltypeMean2[sharedGenes,]), scale = "none", col = colorRampPalette(brewer.pal(n = 11, name = "Spectral"), bias = 2)(1024))
 
 sCvsRecount3medianCenter <- cor(perCelltypeMean2Centered[sharedGenes,], recount3medianCenter[sharedGenes,])
 heatmap3(sCvsRecount3medianCenter, scale = "none", col = colorRampPalette(brewer.pal(n = 11, name = "Spectral"), bias = 2)(1024), margins = c(10,5))
@@ -203,3 +188,17 @@ heatmap3(sCvsRecount3medianCenter, scale = "none", col = colorRampPalette(brewer
 sCvsRecount3median <- cor(perCelltypeMean2[sharedGenes,], recount3median[sharedGenes,])
 heatmap3(sCvsRecount3median, scale = "none", col = colorRampPalette(brewer.pal(n = 11, name = "Spectral"), bias = 2)(1024), margins = c(10,5))
 max(sCvsRecount3median)
+
+
+ibdGwas <- read.delim("/groups/umcg-fg/tmp04/projects/downstreamer/lotte/pascalXRes/IBD.txt.gz")
+rownames(ibdGwas) <- ibdGwas$gene
+ibdGwas$zcore <- -qnorm(ibdGwas$pvalue/2)
+
+
+sharedGenes <- intersect(rownames(ibdGwas), rownames(perCelltypeMean2))
+plot(ibdGwas[sharedGenes,"zcore"], perCelltypeMean2[sharedGenes,"L1-NK-24hCA"])
+cor.test(ibdGwas[sharedGenes,"zcore"], perCelltypeMean2[sharedGenes,"L1-NK-24hCA"])
+
+
+plot(perCelltypeMean2[sharedGenes,"L1-NK-24hCA"])
+
