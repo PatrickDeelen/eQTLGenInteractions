@@ -6,9 +6,11 @@ nextflow.enable.dsl = 2
  * Covariates will be included in the model as linear terms, and the $covariate_to_test will also be included as an interaction with genotype
  */
 process IeQTLmapping {
+    label "ieQtlMapping"
     tag "Chunk: $chunk"
 
-    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
+
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true, pattern: 'beta*'
 
     input:
        tuple path(tmm_expression), path(covariates), path(limix_annotation), val(chunk), path(qtl_ch)
@@ -16,25 +18,26 @@ process IeQTLmapping {
     
     // make the output optional for the case when there are no eQTLs to test and the output is empty. If it's not optional then .collect() in the workflow description will not work
     output:
-        path "limix_out/*", optional: true
+        path "limix_out/zScore_*.txt.gz", optional: true, emit: zscoresTest
+        path "limix_out/perm/zScore_*.txt.gz", optional: true, emit: zscoresPerm
+        path "limix_out/feature_metadata_*.txt", optional: true, emit: featureMeta
+        path "limix_out/snp_metadata_*.txt", optional: true, emit: snpMeta
+        path "limix_out/beta*" , optional: true, emit: betas
 
     shell:
     '''
 
     echo !{chunk}
 
-    echo "8"
+    echo "3"
 
     outdir=${PWD}/limix_out/
     mkdir -p $outdir
 
-    HOME=${PWD}/home
+    HOME="./home"
     mkdir -p ${HOME}
 
-
-    echo "test"
-
-    python /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/singularity_img/Limix_TMP/specialized_lm_interaction_QTL_runner.py \
+    python /tools/Limix/specialized_lm_interaction_QTL_runner.py \
      --bgen merged \
       -af !{limix_annotation} \
       -cf !{covariates} \
@@ -49,12 +52,34 @@ process IeQTLmapping {
       -fvf !{qtl_ch} \
       --interaction_term bazinga
 
+    mkdir -p ${outdir}/perm
+    mv ${outdir}/*_perm.txt.gz ${outdir}/perm || echo "No results"
 
-      
+    echo "Interaction mapping and moving data done"
+
     '''
 }
 
+process PcCorrection {
+    label "ieQtlMapping"
+    tag "Chunk: $chunk"
 
+
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
+
+    input:
+       path(tmm_expression)
+       path(covariates)
+
+    output:
+        path "correctedExpression.txt"
+
+    shell:
+        """
+            echo 1
+            Rscript $projectDir/bin/covCorrection.R
+        """
+}
 
 /*
  * Plot the interaction of rs1981760-NOD2 cis-eQTL with STX3 gene expression (a proxy for neutrophil percentage) - just a sanity check
@@ -122,7 +147,66 @@ process ConvertIeQTLsToText {
     """
 }
 
+process CombineResults {
+    memory '10 GB'
+    time '4h'
+    tag("Merge")
 
+     publishDir params.outdir, mode: 'copy', overwrite: true, failOnError: true
+
+    input:
+        path zscoresTest
+        path zscorePerm
+        path featureMeta
+        path snpMeta
+
+
+    output:
+        path "feature_metadata.txt.gz*"
+        path "snp_metadata.txt.gz*"
+        path "interactionZscoreTest*"
+        path "interactionZscorePermutation*"
+
+    shell:
+    '''
+
+        echo -e "feature_id\tchromosome\tstart\tend\tGeneName\tbiotype\tn_samples\tn_e_samples" > feature_metadata.txt
+        for file in feature_metadata*; do
+            tail -n +2 $file >> feature_metadata.txt
+        done
+        gzip feature_metadata.txt
+        md5sum feature_metadata.txt.gz > feature_metadata.txt.gz.md5
+
+        echo -e "snp_id\tchromosome\tposition\tassessed_allele\tcall_rate\tmaf\thwe_p" > snp_metadata.txt
+        for file in snp_metadata*; do
+            tail -n +2 $file >> snp_metadata.txt
+        done
+        gzip snp_metadata.txt
+        md5sum snp_metadata.txt.gz > snp_metadata.txt.gz.md5
+
+        /tools/jdk-21.0.6+7/bin/java -jar /tools/Datg-tool-1.2/Datg-tool.jar \
+            --mode ROW_CONCAT \
+            --input ./ \
+            --output interactionZscoreTest \
+            --filePattern "zScore_([^_]+)\\.txt\\.gz" \
+            --datasetName "Interaction z-scores !{params.cohort_name}" \
+            --rowContent "Variant_eQtlGene" \
+            --colContent "Covariates"
+
+        /tools/jdk-21.0.6+7/bin/java -jar /tools/Datg-tool-1.2/Datg-tool.jar \
+            --mode ROW_CONCAT \
+            --input ./ \
+            --output interactionZscorePermutation \
+            --filePattern "zScore_(.+)_perm\\.txt\\.gz" \
+            --datasetName "Permuted interaction z-scores !{params.cohort_name}" \
+            --rowContent "Variant_PermutationRound_eQtlGene" \
+            --colContent "Covariates"
+
+        echo "Conversion complete"
+
+     '''
+
+}
 
 workflow RUN_INTERACTION_QTL_MAPPING {   
     take:
@@ -141,8 +225,23 @@ workflow RUN_INTERACTION_QTL_MAPPING {
             : Channel.fromPath('EMPTY')
     // if run interaction analysis with covariate * genotype interaction terms, preadjust gene expression for other, linear covariates
 
-        interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
-        IeQTLmapping(interaction_ch, bgen_ch)
+
+         tmm_expression = PcCorrection(tmm_expression, covariates_ch)
+
+       interaction_ch = tmm_expression.combine(covariates_ch).combine(limix_annotation).combine(chunk).combine(qtl_ch)
+       ieResult = IeQTLmapping(interaction_ch, bgen_ch)
+
+        zscoreTest_ch = ieResult.zscoresTest.flatten().map{it -> [ it.baseName, it ]}.groupTuple().map{ it[1][0]}.collect()
+        zscorePerm_ch = ieResult.zscoresPerm.flatten().map{it -> [ it.baseName, it ]}.groupTuple().map{ it[1][0]}.collect()
+       featureMeta_ch = ieResult.featureMeta.flatten().collect()
+       snpMeta_ch = ieResult.snpMeta.flatten().collect()
+
+
+       // zscoreTest_ch.concat(zscorePerm_ch, featureMeta_ch, snpMeta_ch).collect().view()
+
+        //zscoreTest_ch.view()
+
+       CombineResults(zscoreTest_ch, zscorePerm_ch, featureMeta_ch, snpMeta_ch)
 
     // Plot the interaction of NOD2 cis-eQTL with STX3 (neutrophil proxy) as a sanity check
     //  PlotSTX3NOD2(tmm_expression.combine(covariates_ch).combine(plink_geno).combine(expr_pcs_ch))

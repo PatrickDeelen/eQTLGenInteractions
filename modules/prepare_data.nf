@@ -89,7 +89,7 @@ process CombineCovariatesRNAqual {
     script:
 
       """
-      echo "test"
+      echo "test8"
       Rscript $projectDir/bin/combine_all_covariates.R -s ${general_covariates} -c ${cell_counts} -g ${genotype_PCs} -i ${gte} -o covariates.combined.txt -r ${rna_qual} -v ${eigenAndIc} -e ${filt_exp_ch}
        md5sum covariates.combined.txt > covariates.combined.txt.md5
        md5sum availableCovariates.txt > availableCovariates.txt.md5
@@ -246,16 +246,25 @@ process Transpose {
 process ConvertVcfToBgen {
     label "medium2"
 
+    publishDir "${params.outdir}", mode: 'copy', overwrite: true, failOnError: true
+
     input:
         path vcfDir
 
     output:
-        path("merged.bgen"), emit: bgen_ch
+        tuple path("merged.bgen"), path("merged.bgen.metafile"), emit: bgen_ch
+        path("merged.sample")
     
     script:
     if (params.qtls_to_test == ''){
                """
-          java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP
+
+                   HOME=${PWD}/home
+                   mkdir -p ${HOME}
+
+echo 2
+          java -jar /tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP
+          python -c "from bgen_reader import read_bgen; bgen = read_bgen('merged.bgen', verbose=False)"
           """
 
       }
@@ -263,8 +272,17 @@ process ConvertVcfToBgen {
        """
           zcat  ${params.qtls_to_test} | cut -f 2  > snpsToTest.txt
 
-            echo "9"
-            java -jar /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt
+    export HOME="./home"
+    echo "test"
+    echo \${PWD}
+        echo \${HOME}
+
+
+    mkdir -p \${HOME}
+
+
+            java -jar /tools/GenotypeHarmonizer-1.4.28-SNAPSHOT/GenotypeHarmonizer.jar -i ${vcfDir} -I VCF_FOLDER -O BGEN -o merged --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4 --genotypeField GP --variantFilterList snpsToTest.txt
+            python -c "from bgen_reader import read_bgen; bgen = read_bgen('merged.bgen', verbose=False)"
        """
         }
         //--variantFilterList snpsToTest.txt.gz --mafFilter 0.01 --hweFilter 1e-06 --callRateFilter 0.95 --machR2Filter 0.4

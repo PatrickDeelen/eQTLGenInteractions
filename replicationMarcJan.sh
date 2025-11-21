@@ -87,6 +87,8 @@ NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/proje
 -resume
 
 
+
+
 # -resume \
 #-profile slurm
 #standard

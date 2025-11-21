@@ -46,11 +46,11 @@ genotype_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_gen/gen_PCs/Geno
 expression_pcs_path=${base_folder}/1_DataQC/out/${c}/outputfolder_exp/exp_PCs/exp_PCs.txt
 
 # output folder
-output_path=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/test4/
+output_path=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/test6/
 
 
 # Path to the nextflow interaction analysis folder
-script_folder=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/
+script_folder=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions/
 
 qtls_to_test=${script_folder}/data/sign_qtls_cistrans.txt.gz
 chunk_file=${script_folder}/data/ChunkingFile_test.txt
@@ -62,8 +62,11 @@ expression_ics=/groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/downlo
 
 mkdir -p ${output_path}
 
+cd ${output_path}
+
+
 # Command:
-NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/ieQTL_nextflow_pipeline/InteractionAnalysis.nf \
+NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/projects/eqtlgen-phase2/interactions/eQTLGenInteractions/test2.nf \
 --vcf_dir $vcf_dir_path \
 --raw_expfile ${raw_exp_path} \
 --norm_expfile ${norm_exp_path} \
@@ -81,9 +84,9 @@ NXF_VER=24.04.4 ../nextflow/nextflow-24.04.4-all run /groups/umcg-fg/tmp04/proje
 --run_stratified false \
 --preadjust false \
 --cell_perc_interactions false \
--profile standard \
---dev false \
--resume
+-profile slurm \
+-resume \
+--dev false
 
 
 # -resume \

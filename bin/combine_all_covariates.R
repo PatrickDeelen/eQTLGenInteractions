@@ -102,8 +102,11 @@ if (! is.null(args$cell_counts) && args$cell_counts != "NA"){
   cat("No cell counts provided!\n")
 
 }
-str(covar)
 
+
+if(nrow(covar) == 0){
+    stop("Something went wrong")
+}
 
 
 # add genotype PCs
@@ -139,27 +142,38 @@ if (!is.null(args$eigenAndIca)){
 }
 
 #Remove covariates with only NA values
-fullMissingCovar <- apply(covar, 2, function(x){all(is.na(x))})
+fullMissingCovar <- apply(covar_merged, 2, function(x){all(is.na(x))})
 if(any(fullMissingCovar)){
   write("Excluded covariates with full missingness", stderr())
-  write(paste0(" - ", colnames(covar)[fullMissingCovar]), stderr(), sep = "\n")
-  covar <- covar[,colSums(is.na(covar)) < nrow(covar), drop = F]
+  write(paste0(" - ", colnames(covar_merged)[fullMissingCovar]), stderr(), sep = "\n")
+  covar_merged <- covar_merged[,colSums(is.na(covar_merged)) < nrow(covar_merged), drop = F]
 }
 
 # Remove covariates with near zero variance
-near_zero_var <- nearZeroVar(covar,  uniqueCut = 5)
+near_zero_var <- nearZeroVar(covar_merged,  uniqueCut = 5)
 if (length(near_zero_var) > 0){
 
   write("Excluded covariates with low variablility", stderr())
-  write(paste0(" - ", colnames(covar)[near_zero_var]), stderr(), sep = "\n")
+  write(paste0(" - ", colnames(covar_merged)[near_zero_var]), stderr(), sep = "\n")
 
-  covar <- covar[, -near_zero_var]
+  covar_merged <- covar_merged[, -near_zero_var]
+}
+
+# Remove samples with NA values
+anyMissingSample <- apply(covar_merged, 1, function(x){any(is.na(x))})
+
+cat("Test Number of covariates in the combined file:", ncol(covar_merged), "\n")
+
+
+if(any(anyMissingSample)){
+  write(paste0("Excluded samples with NA values in covariates: ",sum(anyMissingSample)), stderr())
+    covar_merged <- covar_merged[!anyMissingSample, ]
 }
 
 cat("Number of covariates in the combined file:", ncol(covar_merged), "\n")
 cat("Number of samples with covariate data available:", nrow(covar_merged), "\n")
 
-
+cat("Test", "\n")
 # run INT on general covariates, cell counts and RNA quality
 covar_names_for_INT <- names(which(apply(covar_merged, 2, function(x) length(unique(x)) > 3)))
 covar_merged_int <- cbind(covar_merged[, !colnames(covar_merged) %in% covar_names_for_INT, drop =F], apply(covar_merged[,covar_names_for_INT, drop = F], 2, function(x) qnorm((rank(x,na.last="keep")-0.5)/sum(!is.na(x))) ))

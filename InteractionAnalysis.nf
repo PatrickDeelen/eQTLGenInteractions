@@ -31,7 +31,7 @@ params.run_stratified = false
 params.preadjust = false
 params.cell_perc_interactions = false
 params.expr_pcs = ''
-params.num_expr_PCs = 20
+//params.num_expr_PCs = 20 no longer used. Hard coded to 25
 
 //params.expressionEigenvectors = '' // The expression eigenvectors as calculated using all eqtlgen samples
 //  params.expressionIcs = '' // The expression independent components as calculated using all eqtlgen samples

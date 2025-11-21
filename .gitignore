@@ -3,3 +3,6 @@ work/
 *.simg
 *.sif
 .results/
+.Rproj.user
+.RData
+.Rhistory
