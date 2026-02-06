@@ -43,7 +43,7 @@ Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 10)
 
 
 cohorts <- c("LL", "LLS_660Q", "LLS_OmniExpr", "NTR_Affy6", "NTR_GoNL", "RS")
-palette(adjustcolor(brewer.pal(n = 3, name = "Accent"), alpha.f = 0.6))
+palette(adjustcolor(brewer.pal(n = 3, name = "Accent"))
 
 stx3 <- "ENSG00000166900"
 nod2 <- "ENSG00000167207"
